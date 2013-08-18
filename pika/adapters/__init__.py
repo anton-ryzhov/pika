@@ -27,20 +27,32 @@ from select_connection import SelectConnection
 from select_connection import IOLoop
 
 # Dynamically handle 3rd party library dependencies for optional imports
-try:
+from functools import wraps
+
+_module_dict = locals()
+def _lazy_import(importer):
+    @wraps(importer)
+    def inner(*args, **kwargs):
+        imported = _module_dict[importer.__name__] = importer()
+        return imported(*args, **kwargs)
+    return inner
+
+@_lazy_import
+def TornadoConnection():
     from tornado_connection import TornadoConnection
-except ImportError:
-    TornadoConnection = None
+    return TornadoConnection
 
-try:
+@_lazy_import
+def TwistedConnection():
     from twisted_connection import TwistedConnection
+    return TwistedConnection
+
+@_lazy_import
+def TwistedProtocolConnection():
     from twisted_connection import TwistedProtocolConnection
-except ImportError:
-    TwistedConnection = None
-    TwistedProtocolConnection = None
+    return TwistedProtocolConnection
 
-try:
+@_lazy_import
+def LibevConnection():
     from libev_connection import LibevConnection
-except ImportError:
-    LibevConnection = None
-
+    return LibevConnection
